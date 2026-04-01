@@ -100,7 +100,6 @@
 
     <!-- ================= JAVASCRIPT ЛОГИКА ================= -->
     <script>
-        // Ждем загрузки всех элементов HTML, чтобы не было белого экрана
         document.addEventListener('DOMContentLoaded', () => {
 
             // --- ТЕМНАЯ ТЕМА ---
@@ -168,7 +167,6 @@
                     deleteRoomBtn.classList.remove('hidden');
                 }
 
-                // Загружаем историю из памяти телефона/ПК
                 const saved = localStorage.getItem('my_chat_' + currentRoom);
                 if (saved) {
                     try {
@@ -177,7 +175,6 @@
                     } catch(e) {}
                 }
 
-                // Подключаемся к серверу
                 client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
                 const topic = 'super-chat-no-avatars/' + currentRoom;
 
@@ -214,7 +211,7 @@
                 });
             }
 
-            // --- ЗАГРУЗКА ФАЙЛА В ОБЛАКО ---
+            // --- ЗАГРУЗКА ФАЙЛА В ОБЛАКО (С РАСШИРЕННЫМ ВЫВОДОМ ОШИБОК) ---
             fileInput.addEventListener('change', async (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -248,7 +245,11 @@
                         body: formData
                     });
 
-                    if (!response.ok) throw new Error("Ошибка сервера");
+                    // ЕСЛИ СЕРВЕР ОТВЕТИЛ ОШИБКОЙ
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Код сервера: ${response.status}. Текст: ${errorText || response.statusText}`);
+                    }
                     
                     const fileUrl = await response.text();
                     
@@ -264,7 +265,19 @@
                     cancelFileBtn.classList.remove('hidden');
 
                 } catch (err) {
-                    alert("Ошибка при загрузке. Проверьте интернет или выберите файл поменьше.");
+                    // ВЫВОДИМ ПОДРОБНУЮ ОШИБКУ ДЛЯ ПОЛЬЗОВАТЕЛЯ И ПРОГРАММИСТА
+                    console.error("Полная ошибка:", err);
+                    
+                    let errorMsg = "❌ Не удалось загрузить файл.\n\n";
+                    errorMsg += "ДЕТАЛИ ДЛЯ РАЗРАБОТЧИКА:\n";
+                    errorMsg += err.name + ": " + err.message + "\n\n";
+                    
+                    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+                        errorMsg += "💡 ВОЗМОЖНАЯ ПРИЧИНА:\n";
+                        errorMsg += "Ваш браузер (или AdBlock/VPN) блокирует доступ к облаку (litterbox.catbox.moe). Попробуйте отключить блокировщик рекламы или сменить интернет.";
+                    }
+
+                    alert(errorMsg);
                     clearFile();
                 } finally {
                     sendBtn.disabled = false;
@@ -345,7 +358,6 @@
 
                 let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
 
-                // Больше никаких кружков с аватарками, только текстовый пузырь!
                 wrapper.innerHTML = `
                     <div class="max-w-[85%] sm:max-w-[75%] px-4 py-3 shadow-sm relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-none border border-gray-200 dark:border-gray-700'}">
                         ${!isMe ? `<div class="text-xs font-bold text-violet-500 dark:text-violet-400 mb-2">${msg.sender}</div>` : ''}
@@ -367,7 +379,7 @@
                 }
             });
 
-        }); // Конец DOMContentLoaded
+        });
     </script>
 </body>
 </html>
