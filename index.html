@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лёгкий Чат | Аватары и Эмодзи</title>
+    <title>Лёгкий Чат | Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -13,7 +13,6 @@
         body, div, input, textarea, button { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #8b5cf6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Прячем скролл в панели эмодзи */
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -25,7 +24,7 @@
     </button>
 
     <!-- ================= ЭКРАН ВХОДА ================= -->
-    <div id="login-screen" class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+    <div id="login-screen" class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center relative">
         <h1 class="text-3xl font-extrabold text-violet-600 dark:text-violet-400 mb-1">Вход в Чат</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Секретно, быстро, надежно</p>
         
@@ -34,9 +33,7 @@
             <!-- Выбор Аватарки -->
             <div class="text-center bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
                 <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Выберите аватарку</label>
-                <div class="flex flex-wrap justify-center gap-2 text-2xl" id="avatar-container">
-                    <!-- Аватарки генерируются в JS -->
-                </div>
+                <div class="flex flex-wrap justify-center gap-2 text-2xl" id="avatar-container"></div>
                 <input type="hidden" id="selected-avatar" value="👽">
             </div>
 
@@ -50,18 +47,22 @@
 
             <div class="flex items-center justify-center gap-2 bg-violet-50 dark:bg-gray-700 p-3 rounded-xl border border-violet-100 dark:border-gray-600 cursor-pointer" onclick="document.getElementById('is-creator').click()">
                 <input type="checkbox" id="is-creator" class="w-5 h-5 accent-violet-600 cursor-pointer">
-                <label class="text-sm font-semibold text-violet-900 dark:text-violet-300 cursor-pointer select-none">Я создатель (смогу удалить чат)</label>
+                <label class="text-sm font-semibold text-violet-900 dark:text-violet-300 cursor-pointer select-none">Я создатель</label>
             </div>
 
             <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl shadow-lg transition">
                 Войти
             </button>
         </form>
+
+        <!-- Секретная кнопка Админа -->
+        <div id="admin-trigger-btn" class="mt-6 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-pointer transition flex items-center gap-1 text-xs font-bold">
+            <span>🔒 Вход для администратора</span>
+        </div>
     </div>
 
-    <!-- ================= ЭКРАН ЧАТА ================= -->
+    <!-- ================= ЭКРАН ОБЫЧНОГО ЧАТА ================= -->
     <div id="chat-screen" class="hidden w-full max-w-4xl h-full max-h-[850px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex-col overflow-hidden relative border border-gray-200 dark:border-gray-700">
-        
         <!-- Шапка -->
         <div class="bg-violet-600 dark:bg-violet-800 px-4 sm:px-6 py-4 flex justify-between items-center text-white shadow-md z-10">
             <div>
@@ -73,18 +74,12 @@
                 <button id="logout-btn" class="bg-violet-800 hover:bg-violet-900 px-4 py-2 rounded-lg text-sm font-bold">Выйти</button>
             </div>
         </div>
-
         <!-- Сообщения -->
         <div id="messages" class="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900 flex flex-col gap-4">
-            <div class="text-center text-xs text-gray-400 dark:text-gray-500 my-2">
-                Добро пожаловать! Вы можете удалять свои сообщения, нажав на корзину 🗑️
-            </div>
+            <div class="text-center text-xs text-gray-400 dark:text-gray-500 my-2">Добро пожаловать!</div>
         </div>
-
         <!-- Ввод -->
         <div class="p-3 sm:p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 relative">
-            
-            <!-- Предпросмотр выбранного файла -->
             <div id="file-preview-container" class="hidden mb-3 p-3 bg-violet-50 dark:bg-gray-700 rounded-xl flex items-center justify-between border border-violet-100 dark:border-gray-600">
                 <div class="flex items-center gap-2 overflow-hidden">
                     <span class="text-xl">📎</span>
@@ -92,27 +87,13 @@
                 </div>
                 <button type="button" id="cancel-file-btn" class="text-red-500 font-bold hover:text-red-700 px-2 text-xl">×</button>
             </div>
-
-            <!-- Панель Эмодзи -->
-            <div id="emoji-picker" class="hidden absolute bottom-20 left-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-xl rounded-xl p-2 grid grid-cols-6 gap-1 text-2xl z-50 max-h-40 overflow-y-auto no-scrollbar">
-                <!-- Заполняется в JS -->
-            </div>
-
+            <div id="emoji-picker" class="hidden absolute bottom-20 left-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-xl rounded-xl p-2 grid grid-cols-6 gap-1 text-2xl z-50 max-h-40 overflow-y-auto no-scrollbar"></div>
             <form id="chat-form" class="flex gap-1 sm:gap-2 items-end">
-                
-                <!-- Кнопка Эмодзи -->
-                <button type="button" id="emoji-btn" class="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 transition">
-                    😀
-                </button>
-
-                <!-- Скрепка для файла -->
+                <button type="button" id="emoji-btn" class="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 transition">😀</button>
                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-3 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 transition">
-                    📎
-                    <input type="file" id="file-input" class="hidden">
+                    📎 <input type="file" id="file-input" class="hidden">
                 </label>
-
                 <textarea id="msg-input" rows="1" placeholder="Сообщение..." class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none resize-none text-gray-800 dark:text-gray-100"></textarea>
-                
                 <button type="submit" id="send-btn" class="bg-violet-600 hover:bg-violet-700 text-white w-12 sm:w-14 h-12 sm:h-[50px] rounded-xl flex items-center justify-center shadow-md flex-shrink-0 transition">
                     <span id="send-icon">➤</span>
                     <span id="send-loader" class="loader hidden"></span>
@@ -121,14 +102,64 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT ЛОГИКА -->
+    <!-- ================= ЭКРАН ПАНЕЛИ АДМИНИСТРАТОРА ================= -->
+    <div id="admin-screen" class="hidden w-full max-w-6xl h-full max-h-[850px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex overflow-hidden border border-gray-200 dark:border-gray-700">
+        
+        <!-- Левая панель (Список чатов) -->
+        <div class="w-1/3 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div class="p-4 bg-gray-800 text-white font-bold text-lg flex justify-between items-center shadow-md z-10">
+                <span>🛡️ Панель Админа</span>
+                <button onclick="location.reload()" class="text-xs bg-red-500 px-2 py-1 rounded hover:bg-red-600">Выход</button>
+            </div>
+            <div class="p-2 text-xs text-gray-500 text-center font-bold">АКТИВНЫЕ КОМНАТЫ:</div>
+            <div id="admin-rooms-list" class="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+                <!-- Комнаты -->
+            </div>
+        </div>
+
+        <!-- Правая панель (Чат и управление) -->
+        <div class="w-2/3 flex flex-col relative bg-gray-100 dark:bg-gray-800">
+            <div class="p-4 bg-gray-800 text-white font-bold flex justify-between items-center shadow-md z-10">
+                <span id="admin-room-title" class="text-xl">Выберите комнату слева</span>
+                <button id="admin-del-room-btn" class="hidden bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm font-bold shadow">Удалить чат</button>
+            </div>
+            
+            <div id="admin-messages-div" class="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
+                <div class="text-center text-gray-500 mt-10">Ожидание подключения...</div>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex gap-2 bg-white dark:bg-gray-900">
+                <input type="text" id="admin-msg-input" placeholder="Написать от имени Админа..." class="flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:border-violet-500 outline-none text-gray-800 dark:text-white" disabled>
+                <button id="admin-send-msg-btn" class="bg-gray-800 hover:bg-black text-white px-6 rounded-xl font-bold shadow transition" disabled>Отправить</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT ЛОГИКА ================= -->
     <script>
-        // Функция удаления сообщения (Сделана глобальной для вызова из HTML)
+        // ПРОВЕРКА НА БАН САМЫМ ПЕРВЫМ ДЕЛОМ!
+        if (localStorage.getItem('chat_banned') === 'true') {
+            document.body.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-screen bg-gray-900 text-white font-sans p-4 text-center w-full">
+                    <div class="text-7xl mb-6">🔨</div>
+                    <h1 class="text-4xl font-extrabold text-red-500 mb-2">ДОСТУП ЗАКРЫТ</h1>
+                    <p class="text-gray-400 text-lg">Вы были навсегда заблокированы администратором.</p>
+                </div>
+            `;
+            throw new Error("User is banned"); // Останавливает выполнение остального JS
+        }
+
+        // Глобальные функции
+        const TOPIC_PREFIX = 'secret-chat-v5/';
         let publishDeleteMsg = null;
-        function deleteMsg(id) {
-            if (confirm("Удалить это сообщение у всех?")) {
-                publishDeleteMsg(id);
-            }
+        let publishBanUser = null;
+
+        function deleteMsg(id, room) {
+            if (confirm("Удалить это сообщение?")) publishDeleteMsg(id, room);
+        }
+        function banUser(nick, room) {
+            if (confirm(`Забанить пользователя ${nick} навсегда?`)) publishBanUser(nick, room);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -137,17 +168,11 @@
             const themeBtn = document.getElementById('theme-btn');
             function applyTheme() {
                 const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                if (isDark) {
-                    document.documentElement.classList.add('dark');
-                    themeBtn.innerText = '☀️';
-                } else {
-                    document.documentElement.classList.remove('dark');
-                    themeBtn.innerText = '🌙';
-                }
+                if (isDark) { document.documentElement.classList.add('dark'); themeBtn.innerText = '☀️'; } 
+                else { document.documentElement.classList.remove('dark'); themeBtn.innerText = '🌙'; }
             }
             themeBtn.addEventListener('click', () => {
-                const isDark = document.documentElement.classList.contains('dark');
-                localStorage.setItem('theme', isDark ? 'light' : 'dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'light' : 'dark');
                 applyTheme();
             });
             applyTheme();
@@ -158,8 +183,6 @@
             
             const avatarContainer = document.getElementById('avatar-container');
             const selectedAvatarInput = document.getElementById('selected-avatar');
-            
-            // Рендер аватарок
             avatars.forEach(emoji => {
                 const span = document.createElement('span');
                 span.innerText = emoji;
@@ -173,318 +196,341 @@
                 avatarContainer.appendChild(span);
             });
 
-            // Рендер эмодзи
             const emojiPicker = document.getElementById('emoji-picker');
             const emojiBtn = document.getElementById('emoji-btn');
             const msgInput = document.getElementById('msg-input');
-
             emojis.forEach(emoji => {
-                const span = document.createElement('span');
-                span.innerText = emoji;
-                span.className = 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 text-center transition';
-                span.onclick = () => {
-                    msgInput.value += emoji;
-                    emojiPicker.classList.add('hidden');
-                    msgInput.focus();
-                };
+                const span = document.createElement('span'); span.innerText = emoji; span.className = 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 text-center transition';
+                span.onclick = () => { msgInput.value += emoji; emojiPicker.classList.add('hidden'); msgInput.focus(); };
                 emojiPicker.appendChild(span);
             });
-
             emojiBtn.onclick = () => emojiPicker.classList.toggle('hidden');
-            // Скрыть эмодзи при клике вне
-            document.addEventListener('click', (e) => {
-                if (!emojiBtn.contains(e.target) && !emojiPicker.contains(e.target)) {
-                    emojiPicker.classList.add('hidden');
-                }
-            });
+            document.addEventListener('click', (e) => { if (!emojiBtn.contains(e.target) && !emojiPicker.contains(e.target)) emojiPicker.classList.add('hidden'); });
 
-
-            // ПЕРЕМЕННЫЕ ЧАТА
-            let myNick = '';
-            let myAvatar = '';
-            let currentRoom = '';
-            let isCreator = false;
-            let client = null;
-            let chatHistory = [];
-            let selectedFile = null;
+            // ОСНОВНЫЕ ПЕРЕМЕННЫЕ
+            let myNick = ''; let myAvatar = ''; let currentRoom = ''; let isCreator = false; let client = null; let chatHistory = []; let selectedFile = null;
 
             // ЭЛЕМЕНТЫ
             const loginScreen = document.getElementById('login-screen');
             const chatScreen = document.getElementById('chat-screen');
-            const loginForm = document.getElementById('login-form');
-            const chatForm = document.getElementById('chat-form');
-            const messagesDiv = document.getElementById('messages');
-            const fileInput = document.getElementById('file-input');
-            const filePreviewContainer = document.getElementById('file-preview-container');
-            const filePreviewName = document.getElementById('file-preview-name');
-            const cancelFileBtn = document.getElementById('cancel-file-btn');
-            const sendBtn = document.getElementById('send-btn');
-            const sendIcon = document.getElementById('send-icon');
-            const sendLoader = document.getElementById('send-loader');
-            const deleteRoomBtn = document.getElementById('delete-room-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-
-            // ВХОД В КОМНАТУ
-            loginForm.addEventListener('submit', (e) => {
+            const adminScreen = document.getElementById('admin-screen');
+            
+            // ==========================================
+            // ЛОГИКА ОБЫЧНОГО ПОЛЬЗОВАТЕЛЯ
+            // ==========================================
+            document.getElementById('login-form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 myNick = document.getElementById('nickname').value.trim();
                 currentRoom = document.getElementById('room').value.trim();
                 isCreator = document.getElementById('is-creator').checked;
                 myAvatar = selectedAvatarInput.value;
-
-                if (myNick && currentRoom) {
-                    startChat();
-                }
+                if (myNick && currentRoom) startNormalChat();
             });
 
-            // ВЫХОД
-            logoutBtn.addEventListener('click', () => location.reload());
+            document.getElementById('logout-btn').addEventListener('click', () => location.reload());
 
-            // ПУБЛИКАЦИЯ УДАЛЕНИЯ (Привязка глобальной функции)
-            publishDeleteMsg = (msgId) => {
-                if(client) client.publish('super-chat-pro/' + currentRoom, JSON.stringify({ type: 'deleteMsg', msgId: msgId }));
+            publishDeleteMsg = (msgId, roomName) => {
+                if(client) client.publish(TOPIC_PREFIX + (roomName || currentRoom), JSON.stringify({ type: 'deleteMsg', msgId: msgId }));
+            };
+            publishBanUser = (targetNick, roomName) => {
+                if(client) client.publish(TOPIC_PREFIX + roomName, JSON.stringify({ type: 'ban', target: targetNick }));
             };
 
-            // ЗАПУСК ЧАТА
-            function startChat() {
-                loginScreen.classList.add('hidden');
-                chatScreen.classList.remove('hidden');
-                chatScreen.classList.add('flex');
+            function startNormalChat() {
+                loginScreen.classList.add('hidden'); chatScreen.classList.remove('hidden'); chatScreen.classList.add('flex');
                 document.getElementById('room-name-display').innerText = currentRoom;
+                if (isCreator) document.getElementById('delete-room-btn').classList.remove('hidden');
 
-                if (isCreator) {
-                    deleteRoomBtn.classList.remove('hidden');
-                }
-
-                const saved = localStorage.getItem('my_chat_pro_' + currentRoom);
-                if (saved) {
-                    try {
-                        chatHistory = JSON.parse(saved);
-                        renderAllMessages();
-                    } catch(e) {}
-                }
+                const saved = localStorage.getItem('chat_v5_' + currentRoom);
+                if (saved) { try { chatHistory = JSON.parse(saved); renderNormalMessages(); } catch(e) {} }
 
                 client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-                const topic = 'super-chat-pro/' + currentRoom;
+                const topic = TOPIC_PREFIX + currentRoom;
 
                 client.on('connect', () => {
                     client.subscribe(topic);
                     client.publish(topic, JSON.stringify({ type: 'join', sender: myNick }));
                 });
 
-                client.on('message', (topic, message) => {
+                client.on('message', (t, message) => {
                     try {
                         const data = JSON.parse(message.toString());
                         
-                        if (data.type === 'chat') {
-                            chatHistory.push(data);
-                            saveHistory();
-                            renderAllMessages();
+                        // ПРОВЕРКА НА БАН
+                        if (data.type === 'ban' && data.target === myNick) {
+                            localStorage.setItem('chat_banned', 'true');
+                            location.reload();
+                        }
+                        else if (data.type === 'chat') {
+                            chatHistory.push(data); saveNormalHistory(); renderNormalMessages();
                         } 
                         else if (data.type === 'deleteMsg') {
-                            // Удаляем сообщение из массива
                             chatHistory = chatHistory.filter(msg => msg.id !== data.msgId);
-                            saveHistory();
-                            renderAllMessages();
+                            saveNormalHistory(); renderNormalMessages();
                         }
                         else if (data.type === 'join' && isCreator) {
                             client.publish(topic, JSON.stringify({ type: 'sync', history: chatHistory }));
                         } 
                         else if (data.type === 'sync' && !isCreator) {
                             if (data.history.length > chatHistory.length) {
-                                chatHistory = data.history;
-                                saveHistory();
-                                renderAllMessages();
+                                chatHistory = data.history; saveNormalHistory(); renderNormalMessages();
                             }
                         } 
                         else if (data.type === 'delete') {
-                            localStorage.removeItem('my_chat_pro_' + currentRoom);
-                            messagesDiv.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold mt-10">Создатель навсегда удалил чат.</div>`;
+                            localStorage.removeItem('chat_v5_' + currentRoom);
+                            document.getElementById('messages').innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold mt-10">Чат удален создателем или Админом.</div>`;
                             setTimeout(() => location.reload(), 3000);
                         }
-                    } catch (e) { console.error("Ошибка сообщения"); }
+                    } catch (e) {}
                 });
             }
 
-            // ВЫБОР ФАЙЛА
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                if (file.size > 100 * 1024 * 1024) {
-                    alert("Файл слишком большой! Максимум 100 МБ.");
-                    fileInput.value = "";
-                    return;
-                }
-
-                selectedFile = file;
-                filePreviewName.innerText = file.name;
+            // Файлы
+            const fileInput = document.getElementById('file-input');
+            const filePreviewContainer = document.getElementById('file-preview-container');
+            const cancelFileBtn = document.getElementById('cancel-file-btn');
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                if (file.size > 100 * 1024 * 1024) { alert("Максимум 100 МБ."); fileInput.value = ""; return; }
+                selectedFile = file; document.getElementById('file-preview-name').innerText = file.name;
                 filePreviewContainer.classList.remove('hidden');
             });
+            cancelFileBtn.addEventListener('click', () => { selectedFile = null; fileInput.value = ""; filePreviewContainer.classList.add('hidden'); });
 
-            // ОТМЕНА ФАЙЛА
-            cancelFileBtn.addEventListener('click', clearFile);
-
-            function clearFile() {
-                selectedFile = null;
-                fileInput.value = "";
-                filePreviewContainer.classList.add('hidden');
-            }
-
-            // ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА (Только надежный tmpfiles)
             async function uploadFileToCloud(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-
+                const formData = new FormData(); formData.append('file', file);
                 const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: formData });
                 if (!res.ok) throw new Error("Ошибка сервера загрузки");
                 const json = await res.json();
                 return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
 
-            // ОТПРАВКА СООБЩЕНИЯ
-            chatForm.addEventListener('submit', async (e) => {
+            // Отправка обычным юзером
+            document.getElementById('chat-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const text = msgInput.value.trim();
+                const text = msgInput.value.trim(); if (!text && !selectedFile) return;
 
-                if (!text && !selectedFile) return;
-
-                let uploadedFileData = null;
-
-                sendBtn.disabled = true;
-                sendIcon.classList.add('hidden');
-                sendLoader.classList.remove('hidden');
-                msgInput.disabled = true;
+                const sendBtn = document.getElementById('send-btn');
+                sendBtn.disabled = true; document.getElementById('send-icon').classList.add('hidden'); document.getElementById('send-loader').classList.remove('hidden'); msgInput.disabled = true;
 
                 try {
+                    let uploadedFileData = null;
                     if (selectedFile) {
                         const fileUrl = await uploadFileToCloud(selectedFile);
-                        uploadedFileData = {
-                            name: selectedFile.name,
-                            type: selectedFile.type || 'application/octet-stream',
-                            url: fileUrl
-                        };
+                        uploadedFileData = { name: selectedFile.name, type: selectedFile.type || 'application/octet-stream', url: fileUrl };
                     }
 
-                    // Генерация уникального ID для сообщения
-                    const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-
                     const msgData = {
-                        id: uniqueId,
-                        type: 'chat',
-                        sender: myNick,
-                        avatar: myAvatar,
-                        text: text,
-                        file: uploadedFileData,
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                        type: 'chat', sender: myNick, avatar: myAvatar, text: text, file: uploadedFileData,
                         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     };
 
-                    client.publish('super-chat-pro/' + currentRoom, JSON.stringify(msgData));
-                    
-                    msgInput.value = '';
-                    clearFile();
-                } catch (err) {
-                    alert("❌ Ошибка при отправке файла.\nДетали: " + err.message);
-                } finally {
-                    sendBtn.disabled = false;
-                    sendIcon.classList.remove('hidden');
-                    sendLoader.classList.add('hidden');
-                    msgInput.disabled = false;
-                    msgInput.focus();
-                }
+                    client.publish(TOPIC_PREFIX + currentRoom, JSON.stringify(msgData));
+                    msgInput.value = ''; selectedFile = null; fileInput.value = ""; filePreviewContainer.classList.add('hidden');
+                } catch (err) { alert("Ошибка: " + err.message); } 
+                finally { sendBtn.disabled = false; document.getElementById('send-icon').classList.remove('hidden'); document.getElementById('send-loader').classList.add('hidden'); msgInput.disabled = false; msgInput.focus(); }
             });
 
-            // УДАЛЕНИЕ КОМНАТЫ
-            deleteRoomBtn.addEventListener('click', () => {
-                if (confirm("Вы уверены? Чат удалится у всех навсегда.")) {
-                    client.publish('super-chat-pro/' + currentRoom, JSON.stringify({ type: 'delete' }));
-                }
+            document.getElementById('delete-room-btn').addEventListener('click', () => {
+                if (confirm("Удалить навсегда?")) client.publish(TOPIC_PREFIX + currentRoom, JSON.stringify({ type: 'delete' }));
             });
 
-            // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-            function saveHistory() {
-                try {
-                    localStorage.setItem('my_chat_pro_' + currentRoom, JSON.stringify(chatHistory));
-                } catch(e) {
-                    chatHistory = chatHistory.slice(-30);
-                    localStorage.setItem('my_chat_pro_' + currentRoom, JSON.stringify(chatHistory));
-                }
-            }
+            function saveNormalHistory() { localStorage.setItem('chat_v5_' + currentRoom, JSON.stringify(chatHistory.slice(-40))); }
 
-            function renderAllMessages() {
-                messagesDiv.innerHTML = ''; // Очищаем всё
-                
-                // Рендерим заново
+            function renderNormalMessages() {
+                const messagesDiv = document.getElementById('messages'); messagesDiv.innerHTML = '';
                 chatHistory.forEach(msg => {
                     const isMe = msg.sender === myNick;
-                    const wrapper = document.createElement('div');
-                    wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} gap-2`;
+                    const wrapper = document.createElement('div'); wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} gap-2`;
 
-                    // АВАТАРКА ДРУГОГО ПОЛЬЗОВАТЕЛЯ
-                    const avatarHtmlOther = !isMe 
-                        ? `<div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">${msg.avatar || '👤'}</div>` 
-                        : '';
-
-                    // АВАТАРКА МОЯ
-                    const avatarHtmlMe = isMe 
-                        ? `<div class="w-10 h-10 rounded-full bg-violet-200 dark:bg-violet-800 border border-violet-400 dark:border-violet-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">${msg.avatar || '👤'}</div>` 
-                        : '';
-
+                    const avatarHtml = `<div class="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm ${isMe ? 'bg-violet-200 dark:bg-violet-800 border-violet-400 dark:border-violet-600' : 'bg-gray-200 dark:bg-gray-700'}">${msg.avatar || '👤'}</div>`;
+                    
                     let fileHtml = '';
                     if (msg.file && msg.file.url) {
-                        const isImage = msg.file.type.startsWith('image/');
-                        if (isImage) {
-                            fileHtml = `
-                                <div class="mb-2 p-1 rounded-xl bg-black/5 dark:bg-black/20">
-                                    <img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain">
-                                    <a href="${msg.file.url}" target="_blank" class="block mt-2 text-center bg-violet-500/20 hover:bg-violet-500/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 rounded-lg transition">🔍 Открыть / Скачать</a>
-                                </div>`;
+                        if (msg.file.type.startsWith('image/')) {
+                            fileHtml = `<div class="mb-2 p-1 rounded-xl bg-black/5 dark:bg-black/20"><img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain"><a href="${msg.file.url}" target="_blank" class="block mt-2 text-center bg-violet-500/20 hover:bg-violet-500/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 rounded-lg transition">🔍 Скачать</a></div>`;
                         } else {
-                            fileHtml = `
-                                <div class="mb-2 bg-black/10 dark:bg-black/30 p-3 rounded-xl flex flex-col items-center gap-2 text-center">
-                                    <div class="text-3xl">📄</div>
-                                    <div class="text-sm font-bold truncate max-w-[150px]">${msg.file.name}</div>
-                                    <a href="${msg.file.url}" target="_blank" class="bg-violet-700 hover:bg-violet-800 text-white text-xs py-2 px-6 rounded-lg transition w-full">⬇️ Скачать файл</a>
-                                </div>`;
+                            fileHtml = `<div class="mb-2 bg-black/10 dark:bg-black/30 p-3 rounded-xl flex flex-col items-center gap-2 text-center"><div class="text-3xl">📄</div><div class="text-sm font-bold truncate max-w-[150px]">${msg.file.name}</div><a href="${msg.file.url}" target="_blank" class="bg-violet-700 hover:bg-violet-800 text-white text-xs py-2 px-6 rounded-lg transition w-full">⬇️ Скачать файл</a></div>`;
                         }
                     }
 
-                    let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
-
-                    // КНОПКА КОРЗИНЫ (Только для моих сообщений)
-                    const trashBtn = isMe 
-                        ? `<button onclick="deleteMsg('${msg.id}')" class="text-red-300 hover:text-red-100 transition text-sm ml-2 cursor-pointer" title="Удалить у всех">🗑️</button>` 
-                        : '';
+                    // Оформление сообщения Админа для обычных юзеров
+                    const isAdminMsg = msg.admin === true;
+                    const bgClass = isAdminMsg ? 'bg-yellow-500 text-black border-yellow-600' : (isMe ? 'bg-violet-600 text-white border-violet-700' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700');
+                    const textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
+                    const trashBtn = isMe ? `<button onclick="deleteMsg('${msg.id}')" class="text-red-300 hover:text-red-100 transition text-sm ml-2" title="Удалить у всех">🗑️</button>` : '';
 
                     wrapper.innerHTML = `
-                        ${avatarHtmlOther}
+                        ${!isMe ? avatarHtml : ''}
                         <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%] sm:max-w-[60%]">
                             ${!isMe ? `<div class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1 ml-1">${msg.sender}</div>` : ''}
-                            
-                            <div class="px-4 py-3 shadow-md relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-none border border-gray-200 dark:border-gray-700'}">
-                                ${fileHtml}
-                                ${textHtml}
-                                
-                                <div class="flex justify-end items-center mt-2 opacity-80 text-[10px] font-semibold">
-                                    <span>${msg.time}</span>
-                                    ${trashBtn}
-                                </div>
+                            <div class="px-4 py-3 shadow-md relative rounded-2xl ${isMe ? 'rounded-tr-none' : 'rounded-tl-none'} border ${bgClass}">
+                                ${fileHtml} ${textHtml}
+                                <div class="flex justify-end items-center mt-2 opacity-80 text-[10px] font-semibold"><span>${msg.time}</span>${trashBtn}</div>
                             </div>
                         </div>
-                        ${avatarHtmlMe}
+                        ${isMe ? avatarHtml : ''}
                     `;
-
                     messagesDiv.appendChild(wrapper);
                 });
-                
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
+            msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if(!document.getElementById('send-btn').disabled) document.getElementById('send-btn').click(); } });
 
-            // Отправка по Enter
-            msgInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if(!sendBtn.disabled) document.getElementById('send-btn').click();
+
+            // ==========================================
+            // ЛОГИКА ПАНЕЛИ АДМИНИСТРАТОРА
+            // ==========================================
+            const adminTrigger = document.getElementById('admin-trigger-btn');
+            let adminData = {}; // { roomName: { messages: [] } }
+            let activeAdminRoom = null;
+
+            adminTrigger.addEventListener('click', () => {
+                const pw = prompt("Введите пароль Администратора:");
+                if (pw === "nokia098523082") startAdminMode();
+                else if (pw) alert("❌ Неверный пароль!");
+            });
+
+            function startAdminMode() {
+                loginScreen.classList.add('hidden');
+                adminScreen.classList.remove('hidden');
+                
+                client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+                
+                client.on('connect', () => {
+                    // Админ подписывается на ВСЕ комнаты по маске
+                    client.subscribe(TOPIC_PREFIX + '#');
+                });
+
+                client.on('message', (topic, message) => {
+                    try {
+                        const roomName = topic.split('/')[1];
+                        if (!roomName) return;
+                        
+                        const data = JSON.parse(message.toString());
+
+                        if (!adminData[roomName]) {
+                            adminData[roomName] = { messages: [] };
+                            renderAdminRoomList();
+                        }
+
+                        if (data.type === 'chat') {
+                            // Игнорируем дубли
+                            if (!adminData[roomName].messages.find(m => m.id === data.id)) {
+                                adminData[roomName].messages.push(data);
+                                if (activeAdminRoom === roomName) renderAdminMessages();
+                            }
+                        }
+                        else if (data.type === 'sync') {
+                            adminData[roomName].messages = data.history;
+                            if (activeAdminRoom === roomName) renderAdminMessages();
+                        }
+                        else if (data.type === 'deleteMsg') {
+                            adminData[roomName].messages = adminData[roomName].messages.filter(m => m.id !== data.msgId);
+                            if (activeAdminRoom === roomName) renderAdminMessages();
+                        }
+                        else if (data.type === 'delete') {
+                            delete adminData[roomName];
+                            if (activeAdminRoom === roomName) { activeAdminRoom = null; document.getElementById('admin-room-title').innerText = "Выберите комнату"; document.getElementById('admin-messages-div').innerHTML=''; document.getElementById('admin-msg-input').disabled = true;}
+                            renderAdminRoomList();
+                        }
+
+                    } catch (e) {}
+                });
+            }
+
+            function renderAdminRoomList() {
+                const list = document.getElementById('admin-rooms-list');
+                list.innerHTML = '';
+                Object.keys(adminData).forEach(room => {
+                    const btn = document.createElement('button');
+                    btn.className = `w-full text-left p-3 rounded-xl border ${activeAdminRoom === room ? 'bg-violet-600 text-white border-violet-700' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700'} hover:opacity-80 transition font-bold shadow-sm`;
+                    btn.innerText = `💬 ${room} (${adminData[room].messages.length})`;
+                    btn.onclick = () => {
+                        activeAdminRoom = room;
+                        document.getElementById('admin-room-title').innerText = `Комната: ${room}`;
+                        document.getElementById('admin-del-room-btn').classList.remove('hidden');
+                        document.getElementById('admin-msg-input').disabled = false;
+                        document.getElementById('admin-send-msg-btn').disabled = false;
+                        
+                        // Отправляем запрос на синхронизацию (вдруг в комнате есть старые сообщения)
+                        client.publish(TOPIC_PREFIX + room, JSON.stringify({ type: 'join', sender: 'Админ-Наблюдатель' }));
+                        
+                        renderAdminRoomList(); // обновить выделение
+                        renderAdminMessages();
+                    };
+                    list.appendChild(btn);
+                });
+            }
+
+            function renderAdminMessages() {
+                if (!activeAdminRoom) return;
+                const div = document.getElementById('admin-messages-div');
+                div.innerHTML = '';
+                
+                const msgs = adminData[activeAdminRoom].messages;
+                if (msgs.length === 0) div.innerHTML = `<div class="text-center text-gray-500 mt-5">Сообщений пока нет...</div>`;
+
+                msgs.forEach(msg => {
+                    const el = document.createElement('div');
+                    el.className = "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3 rounded-lg shadow-sm flex flex-col";
+                    
+                    let content = msg.text ? `<p class="mt-1">${msg.text}</p>` : '';
+                    if (msg.file) content += `<br><a href="${msg.file.url}" target="_blank" class="text-violet-500 underline font-bold text-sm">📎 Файл: ${msg.file.name}</a>`;
+
+                    // Кнопки управления (Удалить сообщение, Забанить)
+                    const isSystem = msg.admin;
+                    let controls = '';
+                    if (!isSystem) {
+                        controls = `
+                            <div class="flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                <button onclick="deleteMsg('${msg.id}', '${activeAdminRoom}')" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 font-bold">🗑️ Удалить СМС</button>
+                                <button onclick="banUser('${msg.sender}', '${activeAdminRoom}')" class="text-xs bg-black text-white px-2 py-1 rounded hover:bg-gray-800 font-bold">🔨 Забанить ${msg.sender}</button>
+                            </div>
+                        `;
+                    }
+
+                    el.innerHTML = `
+                        <div class="flex justify-between items-center text-xs text-gray-400 font-bold mb-1">
+                            <span>${msg.avatar || '👤'} ${msg.sender} ${msg.admin ? '👑' : ''}</span>
+                            <span>${msg.time}</span>
+                        </div>
+                        <div class="text-sm text-gray-800 dark:text-gray-200">${content}</div>
+                        ${controls}
+                    `;
+                    div.appendChild(el);
+                });
+                div.scrollTop = div.scrollHeight;
+            }
+
+            // Отправка от имени Админа
+            document.getElementById('admin-send-msg-btn').addEventListener('click', () => {
+                const inp = document.getElementById('admin-msg-input');
+                const text = inp.value.trim();
+                if (!text || !activeAdminRoom) return;
+
+                const msgData = {
+                    id: Date.now().toString(36),
+                    type: 'chat',
+                    sender: '👑 ADMIN',
+                    admin: true,
+                    text: text,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                client.publish(TOPIC_PREFIX + activeAdminRoom, JSON.stringify(msgData));
+                inp.value = '';
+            });
+
+            document.getElementById('admin-msg-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('admin-send-msg-btn').click();
+            });
+
+            document.getElementById('admin-del-room-btn').addEventListener('click', () => {
+                if (confirm("Точно удалить весь этот чат навсегда?")) {
+                    client.publish(TOPIC_PREFIX + activeAdminRoom, JSON.stringify({ type: 'delete' }));
                 }
             });
 
