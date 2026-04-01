@@ -3,183 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лёгкий Чат</title>
-    <!-- Подключаем стили Tailwind CSS для красивого дизайна -->
+    <title>Приватный Чат</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Подключаем MQTT.js для связи без сервера -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        /* Скрываем скроллбар для красоты, но оставляем возможность прокрутки */
-        #messages::-webkit-scrollbar { width: 6px; }
-        #messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .avatar-btn.selected { ring: 4px; border-color: #4f46e5; background: #e0e7ff; transform: scale(1.1); }
     </style>
 </head>
-<body class="bg-slate-50 h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 h-screen flex items-center justify-center p-4 font-sans text-gray-800">
 
     <!-- ЭКРАН ВХОДА -->
     <div id="login-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md transition-all">
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-indigo-500 rounded-2xl mx-auto flex items-center justify-center mb-4 transform rotate-12">
-                <svg class="w-8 h-8 text-white transform -rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-            </div>
-            <h1 class="text-3xl font-bold text-slate-800">Лёгкий Чат</h1>
-            <p class="text-slate-500 mt-2">Общение без границ и серверов</p>
-        </div>
-
-        <form id="login-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Ваш никнейм</label>
-                <input type="text" id="nickname" required placeholder="Например: Алекс" class="w-full px-4 py-3 rounded-xl bg-slate-100 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Название комнаты</label>
-                <input type="text" id="room" placeholder="Например: secret-room" value="public-room" class="w-full px-4 py-3 rounded-xl bg-slate-100 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none">
-                <p class="text-xs text-slate-400 mt-1">Люди с таким же названием комнаты попадут в ваш чат.</p>
-            </div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-200 mt-4">
-                Войти в чат
-            </button>
-        </form>
-    </div>
-
-    <!-- ЭКРАН ЧАТА (Изначально скрыт) -->
-    <div id="chat-screen" class="hidden w-full max-w-2xl h-full max-h-[800px] bg-white rounded-2xl shadow-xl flex-col overflow-hidden">
+        <h1 class="text-3xl font-extrabold text-center text-indigo-600 mb-6">Вход в Чат</h1>
         
-        <!-- Шапка чата -->
-        <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+        <form id="login-form" class="space-y-5">
             <div>
-                <h2 id="room-name-display" class="font-bold text-lg">Комната</h2>
-                <div class="text-indigo-200 text-sm flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                    Подключено
+                <label class="block text-sm font-bold text-gray-700 mb-2">Выберите аватарку:</label>
+                <div class="flex justify-between gap-2" id="avatar-container">
+                    <!-- Аватарки генерируются через JS -->
                 </div>
             </div>
-            <button onclick="location.reload()" class="text-indigo-200 hover:text-white transition text-sm bg-indigo-700 px-3 py-1 rounded-lg">
-                Выйти
-            </button>
-        </div>
 
-        <!-- Область сообщений -->
-        <div id="messages" class="flex-1 p-6 overflow-y-auto bg-slate-50 flex flex-col gap-3">
-            <div class="text-center text-xs text-slate-400 my-4 bg-slate-200 inline-block px-3 py-1 rounded-full mx-auto">
-                История сообщений не сохраняется. Вы видите только новые сообщения.
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Ваш никнейм</label>
+                <input type="text" id="nickname" required placeholder="Например: Макс" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
             </div>
-        </div>
 
-        <!-- Поле ввода -->
-        <form id="chat-form" class="p-4 bg-white border-t border-slate-100 flex gap-2">
-            <input type="text" id="msg-input" autocomplete="off" placeholder="Напишите сообщение..." class="flex-1 px-4 py-3 bg-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-indigo-200 transition">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white w-12 h-12 rounded-xl flex items-center justify-center transition shadow-md">
-                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Название комнаты</label>
+                <input type="text" id="room" required placeholder="Например: secret-123" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition">
+            </div>
+
+            <div class="flex items-center gap-2 bg-indigo-50 p-3 rounded-xl border border-indigo-100 cursor-pointer" onclick="document.getElementById('is-creator').click()">
+                <input type="checkbox" id="is-creator" class="w-5 h-5 accent-indigo-600 cursor-pointer">
+                <label class="text-sm font-semibold text-indigo-900 cursor-pointer select-none">Я создатель (смогу удалить чат)</label>
+            </div>
+
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
+                Войти в комнату
             </button>
         </form>
     </div>
 
-    <!-- ЛОГИКА ЧАТА -->
+    <!-- ЭКРАН ЧАТА -->
+    <div id="chat-screen" class="hidden w-full max-w-3xl h-full max-h-[850px] bg-white rounded-2xl shadow-2xl flex-col overflow-hidden relative">
+        
+        <!-- Шапка -->
+        <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <div id="my-avatar-display" class="text-3xl bg-white/20 p-1 rounded-full">🦊</div>
+                <div>
+                    <h2 id="room-name-display" class="font-bold text-xl tracking-wide">Комната</h2>
+                    <p class="text-indigo-200 text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Соединение установлено</p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button id="delete-room-btn" class="hidden bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-bold shadow transition">
+                    🗑 Удалить чат
+                </button>
+                <button onclick="location.reload()" class="bg-indigo-800 hover:bg-indigo-900 px-4 py-2 rounded-lg text-sm font-bold transition">
+                    Выйти
+                </button>
+            </div>
+        </div>
+
+        <!-- Сообщения -->
+        <div id="messages" class="flex-1 p-6 overflow-y-auto bg-gray-50 flex flex-col gap-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+            <!-- Сообщения будут тут -->
+        </div>
+
+        <!-- Ввод -->
+        <div class="p-4 bg-white border-t border-gray-200">
+            <!-- Предпросмотр картинки -->
+            <div id="image-preview-container" class="hidden mb-2 relative inline-block">
+                <img id="image-preview" class="h-20 rounded-lg border shadow-sm">
+                <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600">×</button>
+            </div>
+
+            <form id="chat-form" class="flex gap-2 items-end">
+                <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 p-3 rounded-xl transition text-xl shadow-sm border border-gray-200">
+                    📎
+                    <input type="file" id="file-input" accept="image/*" class="hidden" onchange="previewImage(event)">
+                </label>
+
+                <textarea id="msg-input" rows="1" placeholder="Введите сообщение..." class="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition resize-none"></textarea>
+                
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-12 rounded-xl flex items-center justify-center transition shadow-md flex-shrink-0">
+                    <svg class="w-6 h-6 ml-1 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ЛОГИКА -->
     <script>
-        const loginScreen = document.getElementById('login-screen');
-        const chatScreen = document.getElementById('chat-screen');
-        const loginForm = document.getElementById('login-form');
-        const chatForm = document.getElementById('chat-form');
-        const messagesDiv = document.getElementById('messages');
-        const msgInput = document.getElementById('msg-input');
-        const roomNameDisplay = document.getElementById('room-name-display');
+        const avatars = ['🦊', '🐱', '🐼', '🐯', '🦄', '🤖'];
+        let selectedAvatar = avatars[0];
+        let myNick, currentRoom, isCreator, client, chatHistory = [];
+        let pendingImageData = null;
 
-        let client;
-        let myNickname = '';
-        let currentRoom = '';
+        // Генерация аватарок
+        const avatarContainer = document.getElementById('avatar-container');
+        avatars.forEach(av => {
+            const btn = document.createElement('div');
+            btn.className = `text-3xl cursor-pointer p-2 rounded-xl border-2 border-transparent transition hover:bg-gray-100 ${av === selectedAvatar ? 'selected' : ''}`;
+            btn.innerText = av;
+            btn.onclick = () => {
+                document.querySelectorAll('#avatar-container div').forEach(d => d.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAvatar = av;
+            };
+            avatarContainer.appendChild(btn);
+        });
 
-        // Обработка входа
-        loginForm.addEventListener('submit', (e) => {
+        // ВХОД
+        document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            myNickname = document.getElementById('nickname').value.trim();
-            currentRoom = document.getElementById('room').value.trim() || 'public-room';
+            myNick = document.getElementById('nickname').value.trim();
+            currentRoom = document.getElementById('room').value.trim();
+            isCreator = document.getElementById('is-creator').checked;
 
-            if (myNickname) {
-                startChat();
-            }
+            if (myNick && currentRoom) startChat();
         });
 
         function startChat() {
-            // Переключаем экраны
-            loginScreen.classList.add('hidden');
-            chatScreen.classList.remove('hidden');
-            chatScreen.classList.add('flex');
-            roomNameDisplay.textContent = 'Комната: ' + currentRoom;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('chat-screen').classList.replace('hidden', 'flex');
+            document.getElementById('room-name-display').innerText = currentRoom;
+            document.getElementById('my-avatar-display').innerText = selectedAvatar;
 
-            // Подключаемся к публичному безопасному серверу связи (бесплатно, без регистрации)
+            if (isCreator) document.getElementById('delete-room-btn').classList.remove('hidden');
+
+            // Загрузка истории из памяти устройства
+            const savedHistory = localStorage.getItem('chat_' + currentRoom);
+            if (savedHistory) {
+                chatHistory = JSON.parse(savedHistory);
+                renderAllMessages();
+            }
+
+            // Подключение к серверу обмена
             client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
-            // Уникальный канал для вашей комнаты
-            const topic = 'my-custom-web-chat/' + currentRoom;
+            const topic = 'my-private-chat-app/' + currentRoom;
 
             client.on('connect', () => {
                 client.subscribe(topic);
-                addSystemMessage(`Вы зашли в комнату "${currentRoom}". Поделитесь названием комнаты с друзьями!`);
+                // Просим создателя скинуть историю, если мы только зашли
+                client.publish(topic, JSON.stringify({ type: 'join', sender: myNick }));
             });
 
-            // Когда приходит сообщение
             client.on('message', (topic, message) => {
                 const data = JSON.parse(message.toString());
-                const isMe = data.nickname === myNickname;
-                addMessage(data.nickname, data.text, data.time, isMe);
+                
+                if (data.type === 'chat') {
+                    chatHistory.push(data);
+                    saveHistory();
+                    renderMessage(data);
+                } 
+                else if (data.type === 'join' && isCreator) {
+                    // Создатель отправляет историю новичку
+                    client.publish(topic, JSON.stringify({ type: 'sync', history: chatHistory }));
+                } 
+                else if (data.type === 'sync' && !isCreator) {
+                    // Новичок получает историю
+                    if (data.history.length > chatHistory.length) {
+                        chatHistory = data.history;
+                        saveHistory();
+                        renderAllMessages();
+                    }
+                } 
+                else if (data.type === 'delete') {
+                    // Команда на удаление чата от создателя
+                    localStorage.removeItem('chat_' + currentRoom);
+                    document.getElementById('messages').innerHTML = `
+                        <div class="bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold mt-10">
+                            Создатель комнаты навсегда удалил этот чат.
+                        </div>`;
+                    setTimeout(() => location.reload(), 3000);
+                }
             });
         }
 
-        // Отправка сообщения
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = msgInput.value.trim();
-            
-            if (text && client) {
-                const topic = 'my-custom-web-chat/' + currentRoom;
-                // Формируем данные сообщения
-                const msgData = {
-                    nickname: myNickname,
-                    text: text,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        // ОБРАБОТКА И ОТПРАВКА КАРТИНОК
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Сжимаем картинку, чтобы она пролезла через сеть
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 500;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > MAX_WIDTH) {
+                        height = Math.round((height *= MAX_WIDTH / width));
+                        width = MAX_WIDTH;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    pendingImageData = canvas.toDataURL('image/jpeg', 0.6); // Качество 60%
+                    
+                    document.getElementById('image-preview').src = pendingImageData;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
                 };
-                
-                // Отправляем всем
-                client.publish(topic, JSON.stringify(msgData));
-                msgInput.value = ''; // Очищаем поле
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            pendingImageData = null;
+            document.getElementById('file-input').value = "";
+            document.getElementById('image-preview-container').classList.add('hidden');
+        }
+
+        // ОТПРАВКА СООБЩЕНИЯ
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const textInput = document.getElementById('msg-input');
+            const text = textInput.value.trim();
+
+            if (!text && !pendingImageData) return;
+
+            const msgData = {
+                type: 'chat',
+                sender: myNick,
+                avatar: selectedAvatar,
+                text: text,
+                image: pendingImageData,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            client.publish('my-private-chat-app/' + currentRoom, JSON.stringify(msgData));
+            
+            textInput.value = '';
+            clearImage();
+        });
+
+        // УДАЛЕНИЕ КОМНАТЫ
+        document.getElementById('delete-room-btn').addEventListener('click', () => {
+            if (confirm("Вы уверены? Чат удалится навсегда у всех участников!")) {
+                client.publish('my-private-chat-app/' + currentRoom, JSON.stringify({ type: 'delete' }));
             }
         });
 
-        // Функция отрисовки сообщения в интерфейсе
-        function addMessage(sender, text, time, isMe) {
+        function saveHistory() {
+            localStorage.setItem('chat_' + currentRoom, JSON.stringify(chatHistory));
+        }
+
+        function renderAllMessages() {
+            document.getElementById('messages').innerHTML = '';
+            chatHistory.forEach(renderMessage);
+        }
+
+        function renderMessage(msg) {
+            const isMe = msg.sender === myNick;
+            const messagesDiv = document.getElementById('messages');
             const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col w-full ${isMe ? 'items-end' : 'items-start'}`;
+            
+            wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'}`;
 
-            const bubble = document.createElement('div');
-            // Если сообщение моё - фиолетовое справа, если чужое - белое слева
-            bubble.className = `max-w-[75%] px-4 py-2 rounded-2xl shadow-sm relative ${
-                isMe 
-                ? 'bg-indigo-600 text-white rounded-br-none' 
-                : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none'
-            }`;
+            let imageHtml = msg.image ? `<img src="${msg.image}" class="rounded-lg mb-2 max-w-full cursor-pointer hover:opacity-90 transition" onclick="window.open('${msg.image}')">` : '';
+            let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words">${msg.text}</div>` : '';
 
-            bubble.innerHTML = `
-                ${!isMe ? `<div class="text-xs font-bold text-indigo-500 mb-1">${sender}</div>` : ''}
-                <div class="text-sm break-words leading-relaxed">${text}</div>
-                <div class="text-[10px] mt-1 text-right ${isMe ? 'text-indigo-200' : 'text-slate-400'}">${time}</div>
+            wrapper.innerHTML = `
+                <div class="flex gap-2 max-w-[85%] sm:max-w-[70%] ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end">
+                    <div class="text-3xl mb-1">${msg.avatar}</div>
+                    <div class="px-4 py-3 shadow-sm relative ${isMe ? 'bg-indigo-600 text-white rounded-2xl rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-bl-none'}">
+                        ${!isMe ? `<div class="text-xs font-bold text-indigo-500 mb-1">${msg.sender}</div>` : ''}
+                        ${imageHtml}
+                        ${textHtml}
+                        <div class="text-[10px] mt-1 ${isMe ? 'text-indigo-200 text-right' : 'text-gray-400 text-right'}">${msg.time}</div>
+                    </div>
+                </div>
             `;
 
-            wrapper.appendChild(bubble);
             messagesDiv.appendChild(wrapper);
-            
-            // Прокручиваем вниз
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function addSystemMessage(text) {
-            const div = document.createElement('div');
-            div.className = 'text-center text-xs text-slate-500 my-2';
-            div.textContent = text;
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+        // Отправка по Enter
+        document.getElementById('msg-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+            }
+        });
     </script>
 </body>
 </html>
