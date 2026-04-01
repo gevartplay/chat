@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Приватный Чат</title>
+    <title>Лёгкий Чат</title>
+    <!-- Подключение стилей и скриптов -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -11,67 +12,62 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #8b5cf6; border-radius: 10px; }
         body, div, input, textarea, button { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
-        .avatar-btn.selected { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.2); transform: scale(1.1); }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 h-screen flex items-center justify-center p-4 font-sans text-gray-800 dark:text-gray-200">
 
-    <!-- КНОПКА ТЕМЫ -->
-    <button onclick="toggleTheme()" class="absolute top-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-xl z-50">
-        <span id="theme-icon">🌙</span>
+    <!-- КНОПКА ТЕМЫ (Справа сверху) -->
+    <button id="theme-btn" class="absolute top-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-xl z-50 transition hover:scale-110">
+        🌙
     </button>
 
-    <!-- ЭКРАН ВХОДА -->
-    <div id="login-screen" class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 dark:border-gray-700">
-        <h1 class="text-3xl font-extrabold text-center text-violet-600 dark:text-violet-400 mb-6">Вход в Чат</h1>
+    <!-- ================= ЭКРАН ВХОДА ================= -->
+    <div id="login-screen" class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
         
-        <form id="login-form" class="space-y-5">
-            <div>
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Выберите аватарку:</label>
-                <div class="flex justify-between gap-2" id="avatar-container"></div>
+        <h1 class="text-3xl font-extrabold text-violet-600 dark:text-violet-400 mb-1">Вход в Чат</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Просто, быстро, безопасно</p>
+        
+        <form id="login-form" class="space-y-5 w-full">
+            <div class="text-center">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ваш никнейм</label>
+                <input type="text" id="nickname" required placeholder="Например: Алекс" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
             </div>
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Ваш никнейм</label>
-                <input type="text" id="nickname" required placeholder="Например: Макс" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
+            <div class="text-center">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Название комнаты</label>
+                <input type="text" id="room" required placeholder="Например: room-123" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
             </div>
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Название комнаты</label>
-                <input type="text" id="room" required placeholder="Например: secret-123" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
-            </div>
-
-            <div class="flex items-center gap-2 bg-violet-50 dark:bg-gray-700 p-3 rounded-xl border border-violet-100 dark:border-gray-600 cursor-pointer" onclick="document.getElementById('is-creator').click()">
+            <div class="flex items-center justify-center gap-2 bg-violet-50 dark:bg-gray-700 p-3 rounded-xl border border-violet-100 dark:border-gray-600 cursor-pointer mt-2" onclick="document.getElementById('is-creator').click()">
                 <input type="checkbox" id="is-creator" class="w-5 h-5 accent-violet-600 cursor-pointer">
                 <label class="text-sm font-semibold text-violet-900 dark:text-violet-300 cursor-pointer select-none">Я создатель (смогу удалить чат)</label>
             </div>
 
-            <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl shadow-lg">Войти в комнату</button>
+            <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl shadow-lg mt-4 transition">
+                Войти
+            </button>
         </form>
     </div>
 
-    <!-- ЭКРАН ЧАТА -->
+    <!-- ================= ЭКРАН ЧАТА ================= -->
     <div id="chat-screen" class="hidden w-full max-w-4xl h-full max-h-[850px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex-col overflow-hidden relative border border-gray-200 dark:border-gray-700">
         
         <!-- Шапка -->
         <div class="bg-violet-600 dark:bg-violet-800 px-6 py-4 flex justify-between items-center text-white shadow-md z-10">
-            <div class="flex items-center gap-3">
-                <div id="my-avatar-display" class="text-3xl bg-white/20 p-1 rounded-full">🦊</div>
-                <div>
-                    <h2 id="room-name-display" class="font-bold text-xl tracking-wide">Комната</h2>
-                    <p class="text-violet-200 text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Соединение установлено</p>
-                </div>
+            <div>
+                <h2 id="room-name-display" class="font-bold text-xl tracking-wide">Комната</h2>
+                <p class="text-violet-200 text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> В сети</p>
             </div>
             <div class="flex gap-2">
-                <button id="delete-room-btn" class="hidden bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg text-sm font-bold shadow">🗑 Удалить</button>
-                <button onclick="location.reload()" class="bg-violet-800 hover:bg-violet-900 px-3 py-2 rounded-lg text-sm font-bold">Выйти</button>
+                <button id="delete-room-btn" class="hidden bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg text-sm font-bold shadow">Удалить чат</button>
+                <button id="logout-btn" class="bg-violet-800 hover:bg-violet-900 px-4 py-2 rounded-lg text-sm font-bold">Выйти</button>
             </div>
         </div>
 
         <!-- Сообщения -->
         <div id="messages" class="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900 flex flex-col gap-4">
             <div class="text-center text-xs text-gray-400 dark:text-gray-500 my-2">
-                Все файлы загружаются в анонимное облако и удаляются через 24 часа. Макс. размер: 100 МБ.
+                Файлы отправляются в облако и хранятся 24 часа. Максимум: 100 МБ.
             </div>
         </div>
 
@@ -81,287 +77,297 @@
             <!-- Предпросмотр загрузки файла -->
             <div id="file-preview-container" class="hidden mb-3 p-3 bg-violet-50 dark:bg-gray-700 rounded-xl flex items-center justify-between border border-violet-100 dark:border-gray-600">
                 <div class="flex items-center gap-2 overflow-hidden">
-                    <span id="file-preview-icon" class="text-2xl animate-bounce">⏳</span>
-                    <span id="file-preview-name" class="text-sm font-bold truncate text-violet-800 dark:text-violet-200">Загрузка в облако...</span>
+                    <span id="file-preview-icon" class="text-xl">⏳</span>
+                    <span id="file-preview-name" class="text-sm font-bold text-violet-800 dark:text-violet-200">Подготовка файла...</span>
                 </div>
-                <button type="button" id="cancel-file-btn" onclick="clearFile()" class="text-red-500 font-bold hover:text-red-700 px-2 text-xl hidden">×</button>
+                <button type="button" id="cancel-file-btn" class="text-red-500 font-bold hover:text-red-700 px-2 text-xl hidden">×</button>
             </div>
 
             <form id="chat-form" class="flex gap-2 items-end">
                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-3 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 transition">
                     📎
-                    <input type="file" id="file-input" class="hidden" onchange="uploadFileToCloud(event)">
+                    <input type="file" id="file-input" class="hidden">
                 </label>
 
                 <textarea id="msg-input" rows="1" placeholder="Введите сообщение..." class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none resize-none text-gray-800 dark:text-gray-100"></textarea>
                 
                 <button type="submit" id="send-btn" class="bg-violet-600 hover:bg-violet-700 text-white w-14 h-12 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 transition">
-                    <svg class="w-6 h-6 ml-1 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                    ➤
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- ЛОГИКА -->
+    <!-- ================= JAVASCRIPT ЛОГИКА ================= -->
     <script>
-        // --- ТЕМНАЯ ТЕМА ---
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-                document.getElementById('theme-icon').innerText = '🌙';
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-                document.getElementById('theme-icon').innerText = '☀️';
+        // Ждем загрузки всех элементов HTML, чтобы не было белого экрана
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- ТЕМНАЯ ТЕМА ---
+            const themeBtn = document.getElementById('theme-btn');
+            function applyTheme() {
+                const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    themeBtn.innerText = '☀️';
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    themeBtn.innerText = '🌙';
+                }
             }
-        }
-        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            document.getElementById('theme-icon').innerText = '☀️';
-        }
+            themeBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.contains('dark');
+                localStorage.setItem('theme', isDark ? 'light' : 'dark');
+                applyTheme();
+            });
+            applyTheme();
 
-        const avatars = ['🦊', '🐱', '🐼', '🐯', '🦄', '🤖', '👽', '👻'];
-        let selectedAvatar = avatars[0];
-        let myNick, currentRoom, isCreator, client, chatHistory = [];
-        let pendingFileUrl = null;
-        let pendingFileData = null;
+            // --- ПЕРЕМЕННЫЕ ЧАТА ---
+            let myNick = '';
+            let currentRoom = '';
+            let isCreator = false;
+            let client = null;
+            let chatHistory = [];
+            let pendingFileData = null;
 
-        const avatarContainer = document.getElementById('avatar-container');
-        avatars.forEach(av => {
-            const btn = document.createElement('div');
-            btn.className = `text-3xl cursor-pointer p-1 sm:p-2 rounded-xl border-2 border-transparent transition hover:bg-gray-100 dark:hover:bg-gray-700 ${av === selectedAvatar ? 'selected' : ''}`;
-            btn.innerText = av;
-            btn.onclick = () => {
-                document.querySelectorAll('#avatar-container div').forEach(d => d.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedAvatar = av;
-            };
-            avatarContainer.appendChild(btn);
-        });
+            // --- ЭЛЕМЕНТЫ ---
+            const loginScreen = document.getElementById('login-screen');
+            const chatScreen = document.getElementById('chat-screen');
+            const loginForm = document.getElementById('login-form');
+            const chatForm = document.getElementById('chat-form');
+            const messagesDiv = document.getElementById('messages');
+            const msgInput = document.getElementById('msg-input');
+            const fileInput = document.getElementById('file-input');
+            const cancelFileBtn = document.getElementById('cancel-file-btn');
+            const deleteRoomBtn = document.getElementById('delete-room-btn');
+            const logoutBtn = document.getElementById('logout-btn');
 
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            myNick = document.getElementById('nickname').value.trim();
-            currentRoom = document.getElementById('room').value.trim();
-            isCreator = document.getElementById('is-creator').checked;
-            if (myNick && currentRoom) startChat();
-        });
+            // --- ВХОД В КОМНАТУ ---
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                myNick = document.getElementById('nickname').value.trim();
+                currentRoom = document.getElementById('room').value.trim();
+                isCreator = document.getElementById('is-creator').checked;
 
-        function startChat() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('chat-screen').classList.replace('hidden', 'flex');
-            document.getElementById('room-name-display').innerText = currentRoom;
-            document.getElementById('my-avatar-display').innerText = selectedAvatar;
-            if (isCreator) document.getElementById('delete-room-btn').classList.remove('hidden');
-
-            const savedHistory = localStorage.getItem('chat_v3_' + currentRoom);
-            if (savedHistory) {
-                chatHistory = JSON.parse(savedHistory);
-                renderAllMessages();
-            }
-
-            client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-            const topic = 'my-super-chat-v3/' + currentRoom;
-
-            client.on('connect', () => {
-                client.subscribe(topic);
-                client.publish(topic, JSON.stringify({ type: 'join', sender: myNick }));
+                if (myNick && currentRoom) {
+                    startChat();
+                }
             });
 
-            client.on('message', (topic, message) => {
-                try {
-                    const data = JSON.parse(message.toString());
-                    if (data.type === 'chat') {
-                        chatHistory.push(data);
-                        saveHistory();
-                        renderMessage(data);
-                    } 
-                    else if (data.type === 'join' && isCreator) {
-                        client.publish(topic, JSON.stringify({ type: 'sync', history: chatHistory }));
-                    } 
-                    else if (data.type === 'sync' && !isCreator) {
-                        if (data.history.length > chatHistory.length) {
-                            chatHistory = data.history;
-                            saveHistory();
-                            renderAllMessages();
-                        }
-                    } 
-                    else if (data.type === 'delete') {
-                        localStorage.removeItem('chat_v3_' + currentRoom);
-                        document.getElementById('messages').innerHTML = `
-                            <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-4 rounded-xl text-center font-bold mt-10 shadow-lg">
-                                🗑 Создатель комнаты навсегда удалил этот чат.
-                            </div>`;
-                        setTimeout(() => location.reload(), 3000);
-                    }
-                } catch (e) { console.error(e); }
-            });
-        }
+            // --- ВЫХОД ---
+            logoutBtn.addEventListener('click', () => location.reload());
 
-        // АВТОМАТИЧЕСКАЯ ЗАГРУЗКА В ОБЛАКО LITTERBOX (Анонимно)
-        async function uploadFileToCloud(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            // --- ЗАПУСК ЧАТА ---
+            function startChat() {
+                loginScreen.classList.add('hidden');
+                chatScreen.classList.remove('hidden');
+                chatScreen.classList.add('flex');
+                document.getElementById('room-name-display').innerText = currentRoom;
 
-            if (file.size > 100 * 1024 * 1024) { // Ограничение 100 МБ
-                alert("Размер файла не должен превышать 100 Мегабайт!");
-                return;
-            }
+                if (isCreator) {
+                    deleteRoomBtn.classList.remove('hidden');
+                }
 
-            const previewIcon = document.getElementById('file-preview-icon');
-            const previewName = document.getElementById('file-preview-name');
-            const container = document.getElementById('file-preview-container');
-            const sendBtn = document.getElementById('send-btn');
-            const cancelBtn = document.getElementById('cancel-file-btn');
+                // Загружаем историю из памяти телефона/ПК
+                const saved = localStorage.getItem('my_chat_' + currentRoom);
+                if (saved) {
+                    try {
+                        chatHistory = JSON.parse(saved);
+                        chatHistory.forEach(renderMessage);
+                    } catch(e) {}
+                }
 
-            // Показываем индикатор загрузки
-            container.classList.remove('hidden');
-            previewIcon.innerText = '⏳';
-            previewIcon.classList.add('animate-bounce');
-            previewName.innerText = 'Загрузка в облако... Ждите.';
-            cancelBtn.classList.add('hidden');
-            sendBtn.disabled = true;
-            sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                // Подключаемся к серверу
+                client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+                const topic = 'super-chat-no-avatars/' + currentRoom;
 
-            try {
-                // Подготавливаем файл для загрузки
-                const formData = new FormData();
-                formData.append('reqtype', 'fileupload');
-                formData.append('time', '24h'); // Файл живет ровно 24 часа
-                formData.append('fileToUpload', file);
-
-                // Отправляем на бесплатный сервер (Litterbox Catbox)
-                const response = await fetch('https://litterbox.catbox.moe/api', {
-                    method: 'POST',
-                    body: formData
+                client.on('connect', () => {
+                    client.subscribe(topic);
+                    client.publish(topic, JSON.stringify({ type: 'join', sender: myNick }));
                 });
 
-                if (!response.ok) throw new Error("Ошибка сервера");
-                
-                // Получаем короткую ссылку на файл
-                pendingFileUrl = await response.text();
-                
-                pendingFileData = {
-                    name: file.name,
-                    type: file.type || 'application/octet-stream',
-                    url: pendingFileUrl // Сохраняем ТОЛЬКО ссылку, чат больше не виснет!
+                client.on('message', (topic, message) => {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        if (data.type === 'chat') {
+                            chatHistory.push(data);
+                            saveHistory();
+                            renderMessage(data);
+                        } 
+                        else if (data.type === 'join' && isCreator) {
+                            client.publish(topic, JSON.stringify({ type: 'sync', history: chatHistory }));
+                        } 
+                        else if (data.type === 'sync' && !isCreator) {
+                            if (data.history.length > chatHistory.length) {
+                                chatHistory = data.history;
+                                saveHistory();
+                                messagesDiv.innerHTML = '';
+                                chatHistory.forEach(renderMessage);
+                            }
+                        } 
+                        else if (data.type === 'delete') {
+                            localStorage.removeItem('my_chat_' + currentRoom);
+                            messagesDiv.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold mt-10">Создатель навсегда удалил чат.</div>`;
+                            setTimeout(() => location.reload(), 3000);
+                        }
+                    } catch (e) { console.error("Ошибка сообщения"); }
+                });
+            }
+
+            // --- ЗАГРУЗКА ФАЙЛА В ОБЛАКО ---
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (file.size > 100 * 1024 * 1024) {
+                    alert("Файл слишком большой! Максимум 100 МБ.");
+                    return;
+                }
+
+                const container = document.getElementById('file-preview-container');
+                const icon = document.getElementById('file-preview-icon');
+                const nameText = document.getElementById('file-preview-name');
+                const sendBtn = document.getElementById('send-btn');
+
+                container.classList.remove('hidden');
+                icon.innerText = '⏳';
+                icon.classList.add('animate-bounce');
+                nameText.innerText = 'Загрузка в облако...';
+                cancelFileBtn.classList.add('hidden');
+                sendBtn.disabled = true;
+                sendBtn.style.opacity = '0.5';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('reqtype', 'fileupload');
+                    formData.append('time', '24h');
+                    formData.append('fileToUpload', file);
+
+                    const response = await fetch('https://litterbox.catbox.moe/api', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error("Ошибка сервера");
+                    
+                    const fileUrl = await response.text();
+                    
+                    pendingFileData = {
+                        name: file.name,
+                        type: file.type || 'application/octet-stream',
+                        url: fileUrl
+                    };
+
+                    icon.classList.remove('animate-bounce');
+                    icon.innerText = '✅';
+                    nameText.innerText = 'Прикреплено: ' + file.name;
+                    cancelFileBtn.classList.remove('hidden');
+
+                } catch (err) {
+                    alert("Ошибка при загрузке. Проверьте интернет или выберите файл поменьше.");
+                    clearFile();
+                } finally {
+                    sendBtn.disabled = false;
+                    sendBtn.style.opacity = '1';
+                }
+            });
+
+            // Отмена файла
+            cancelFileBtn.addEventListener('click', clearFile);
+
+            function clearFile() {
+                pendingFileData = null;
+                fileInput.value = "";
+                document.getElementById('file-preview-container').classList.add('hidden');
+            }
+
+            // --- ОТПРАВКА СООБЩЕНИЯ ---
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = msgInput.value.trim();
+
+                if (!text && !pendingFileData) return;
+
+                const msgData = {
+                    type: 'chat',
+                    sender: myNick,
+                    text: text,
+                    file: pendingFileData,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
 
-                previewIcon.classList.remove('animate-bounce');
-                previewIcon.innerText = file.type.startsWith('image/') ? '🖼️' : '✅';
-                previewName.innerText = 'Прикреплено: ' + file.name;
-                cancelBtn.classList.remove('hidden'); // Показываем крестик
-
-            } catch (err) {
-                alert("Ошибка при загрузке файла. Проверьте интернет.");
+                client.publish('super-chat-no-avatars/' + currentRoom, JSON.stringify(msgData));
+                
+                msgInput.value = '';
                 clearFile();
-            } finally {
-                sendBtn.disabled = false;
-                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
+            });
 
-        function clearFile() {
-            pendingFileUrl = null;
-            pendingFileData = null;
-            document.getElementById('file-input').value = "";
-            document.getElementById('file-preview-container').classList.add('hidden');
-        }
+            // --- УДАЛЕНИЕ КОМНАТЫ ---
+            deleteRoomBtn.addEventListener('click', () => {
+                if (confirm("Вы уверены? Чат удалится у всех навсегда.")) {
+                    client.publish('super-chat-no-avatars/' + currentRoom, JSON.stringify({ type: 'delete' }));
+                }
+            });
 
-        document.getElementById('chat-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const textInput = document.getElementById('msg-input');
-            const text = textInput.value.trim();
-
-            if (!text && !pendingFileData) return;
-
-            const msgData = {
-                type: 'chat',
-                sender: myNick,
-                avatar: selectedAvatar,
-                text: text,
-                file: pendingFileData, // Отправляем данные файла (с прямой ссылкой на облако)
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-
-            client.publish('my-super-chat-v3/' + currentRoom, JSON.stringify(msgData));
-            
-            textInput.value = '';
-            clearFile();
-        });
-
-        document.getElementById('delete-room-btn').addEventListener('click', () => {
-            if (confirm("Удалить чат навсегда у всех участников?")) {
-                client.publish('my-super-chat-v3/' + currentRoom, JSON.stringify({ type: 'delete' }));
-            }
-        });
-
-        function saveHistory() {
-            try {
-                localStorage.setItem('chat_v3_' + currentRoom, JSON.stringify(chatHistory));
-            } catch (e) {
-                chatHistory = chatHistory.slice(-20); // Оставляем 20 последних
-                localStorage.setItem('chat_v3_' + currentRoom, JSON.stringify(chatHistory));
-            }
-        }
-
-        function renderAllMessages() {
-            document.getElementById('messages').innerHTML = '';
-            chatHistory.forEach(renderMessage);
-        }
-
-        function renderMessage(msg) {
-            const isMe = msg.sender === myNick;
-            const messagesDiv = document.getElementById('messages');
-            const wrapper = document.createElement('div');
-            
-            wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'}`;
-
-            let fileHtml = '';
-            if (msg.file && msg.file.url) {
-                const isImage = msg.file.type.startsWith('image/');
-                if (isImage) {
-                    fileHtml = `
-                        <div class="mb-2 bg-black/5 p-1 rounded-xl">
-                            <img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain shadow-sm border border-black/10">
-                            <a href="${msg.file.url}" target="_blank" rel="noopener noreferrer" class="block mt-2 text-center bg-violet-700/20 hover:bg-violet-700/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 px-3 rounded-lg transition">🔍 Открыть / Скачать оригинал</a>
-                        </div>`;
-                } else {
-                    fileHtml = `
-                        <div class="mb-2 bg-black/10 dark:bg-black/30 p-4 rounded-xl flex flex-col items-center gap-2 border border-black/10 shadow-inner">
-                            <div class="text-4xl">📄</div>
-                            <div class="text-sm font-bold truncate max-w-[150px] sm:max-w-[200px] text-center">${msg.file.name}</div>
-                            <a href="${msg.file.url}" target="_blank" rel="noopener noreferrer" class="bg-violet-800 hover:bg-violet-900 text-white text-xs py-2 px-6 rounded-lg transition shadow-md w-full text-center">⬇️ Скачать файл</a>
-                        </div>`;
+            // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+            function saveHistory() {
+                try {
+                    localStorage.setItem('my_chat_' + currentRoom, JSON.stringify(chatHistory));
+                } catch(e) {
+                    chatHistory = chatHistory.slice(-20);
+                    localStorage.setItem('my_chat_' + currentRoom, JSON.stringify(chatHistory));
                 }
             }
 
-            let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
+            function renderMessage(msg) {
+                const isMe = msg.sender === myNick;
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'}`;
 
-            wrapper.innerHTML = `
-                <div class="flex gap-2 max-w-[90%] sm:max-w-[75%] ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end">
-                    <div class="text-2xl sm:text-3xl mb-1">${msg.avatar}</div>
-                    <div class="px-4 py-3 shadow-md relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-none border border-gray-200 dark:border-gray-700'}">
-                        ${!isMe ? `<div class="text-xs font-bold text-violet-500 dark:text-violet-400 mb-1">${msg.sender}</div>` : ''}
+                let fileHtml = '';
+                if (msg.file && msg.file.url) {
+                    const isImage = msg.file.type.startsWith('image/');
+                    if (isImage) {
+                        fileHtml = `
+                            <div class="mb-2 p-1 rounded-xl bg-black/5 dark:bg-black/20">
+                                <img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain">
+                                <a href="${msg.file.url}" target="_blank" class="block mt-2 text-center bg-violet-500/20 hover:bg-violet-500/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 rounded-lg transition">🔍 Скачать / Открыть</a>
+                            </div>`;
+                    } else {
+                        fileHtml = `
+                            <div class="mb-2 bg-black/10 dark:bg-black/30 p-3 rounded-xl flex flex-col items-center gap-2 text-center">
+                                <div class="text-3xl">📄</div>
+                                <div class="text-sm font-bold truncate max-w-[150px]">${msg.file.name}</div>
+                                <a href="${msg.file.url}" target="_blank" class="bg-violet-700 hover:bg-violet-800 text-white text-xs py-2 px-6 rounded-lg transition w-full">⬇️ Скачать</a>
+                            </div>`;
+                    }
+                }
+
+                let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
+
+                // Больше никаких кружков с аватарками, только текстовый пузырь!
+                wrapper.innerHTML = `
+                    <div class="max-w-[85%] sm:max-w-[75%] px-4 py-3 shadow-sm relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-none border border-gray-200 dark:border-gray-700'}">
+                        ${!isMe ? `<div class="text-xs font-bold text-violet-500 dark:text-violet-400 mb-2">${msg.sender}</div>` : ''}
                         ${fileHtml}
                         ${textHtml}
-                        <div class="text-[10px] mt-2 ${isMe ? 'text-violet-200' : 'text-gray-400 dark:text-gray-500'} text-right font-semibold">${msg.time}</div>
+                        <div class="text-[10px] mt-2 opacity-70 text-right font-semibold">${msg.time}</div>
                     </div>
-                </div>
-            `;
+                `;
 
-            messagesDiv.appendChild(wrapper);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        document.getElementById('msg-input').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+                messagesDiv.appendChild(wrapper);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
-        });
+
+            // Отправка по Enter
+            msgInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('send-btn').click();
+                }
+            });
+
+        }); // Конец DOMContentLoaded
     </script>
 </body>
 </html>
