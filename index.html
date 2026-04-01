@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лёгкий Чат | Секретные файлы</title>
+    <title>Лёгкий Чат | Аватары и Эмодзи</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -13,47 +13,57 @@
         body, div, input, textarea, button { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #8b5cf6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Прячем скролл в панели эмодзи */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 h-screen flex items-center justify-center p-4 font-sans text-gray-800 dark:text-gray-200">
+<body class="bg-gray-100 dark:bg-gray-900 h-screen flex items-center justify-center p-2 sm:p-4 font-sans text-gray-800 dark:text-gray-200">
 
     <!-- Кнопка темы -->
     <button id="theme-btn" class="absolute top-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 text-xl z-50 transition hover:scale-110">
         🌙
     </button>
 
-    <!-- ЭКРАН ВХОДА -->
-    <div id="login-screen" class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+    <!-- ================= ЭКРАН ВХОДА ================= -->
+    <div id="login-screen" class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
         <h1 class="text-3xl font-extrabold text-violet-600 dark:text-violet-400 mb-1">Вход в Чат</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">Отправляй самоуничтожающиеся файлы</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Секретно, быстро, надежно</p>
         
-        <form id="login-form" class="space-y-5 w-full">
-            <div class="text-center">
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ваш никнейм</label>
-                <input type="text" id="nickname" required placeholder="Например: Алекс" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
+        <form id="login-form" class="space-y-4 w-full">
+            
+            <!-- Выбор Аватарки -->
+            <div class="text-center bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Выберите аватарку</label>
+                <div class="flex flex-wrap justify-center gap-2 text-2xl" id="avatar-container">
+                    <!-- Аватарки генерируются в JS -->
+                </div>
+                <input type="hidden" id="selected-avatar" value="👽">
             </div>
 
             <div class="text-center">
-                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Название комнаты</label>
-                <input type="text" id="room" required placeholder="Например: room-123" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
+                <input type="text" id="nickname" required placeholder="Ваш никнейм" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
             </div>
 
-            <div class="flex items-center justify-center gap-2 bg-violet-50 dark:bg-gray-700 p-3 rounded-xl border border-violet-100 dark:border-gray-600 cursor-pointer mt-2" onclick="document.getElementById('is-creator').click()">
+            <div class="text-center">
+                <input type="text" id="room" required placeholder="Название комнаты" class="w-full px-4 py-3 text-center rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none">
+            </div>
+
+            <div class="flex items-center justify-center gap-2 bg-violet-50 dark:bg-gray-700 p-3 rounded-xl border border-violet-100 dark:border-gray-600 cursor-pointer" onclick="document.getElementById('is-creator').click()">
                 <input type="checkbox" id="is-creator" class="w-5 h-5 accent-violet-600 cursor-pointer">
                 <label class="text-sm font-semibold text-violet-900 dark:text-violet-300 cursor-pointer select-none">Я создатель (смогу удалить чат)</label>
             </div>
 
-            <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl shadow-lg mt-4 transition">
+            <button type="submit" class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl shadow-lg transition">
                 Войти
             </button>
         </form>
     </div>
 
-    <!-- ЭКРАН ЧАТА -->
+    <!-- ================= ЭКРАН ЧАТА ================= -->
     <div id="chat-screen" class="hidden w-full max-w-4xl h-full max-h-[850px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex-col overflow-hidden relative border border-gray-200 dark:border-gray-700">
         
         <!-- Шапка -->
-        <div class="bg-violet-600 dark:bg-violet-800 px-6 py-4 flex justify-between items-center text-white shadow-md z-10">
+        <div class="bg-violet-600 dark:bg-violet-800 px-4 sm:px-6 py-4 flex justify-between items-center text-white shadow-md z-10">
             <div>
                 <h2 id="room-name-display" class="font-bold text-xl tracking-wide">Комната</h2>
                 <p class="text-violet-200 text-xs flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> В сети</p>
@@ -67,39 +77,43 @@
         <!-- Сообщения -->
         <div id="messages" class="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900 flex flex-col gap-4">
             <div class="text-center text-xs text-gray-400 dark:text-gray-500 my-2">
-                Все сообщения зашифрованы протоколом MQTT.<br>Вы можете отправлять файлы до 100 МБ.
+                Добро пожаловать! Вы можете удалять свои сообщения, нажав на корзину 🗑️
             </div>
         </div>
 
         <!-- Ввод -->
-        <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div class="p-3 sm:p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 relative">
             
-            <!-- Блок предпросмотра выбранного файла -->
-            <div id="file-preview-container" class="hidden mb-3 p-3 bg-violet-50 dark:bg-gray-700 rounded-xl flex flex-col gap-2 border border-violet-100 dark:border-gray-600">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 overflow-hidden">
-                        <span class="text-xl">📎</span>
-                        <span id="file-preview-name" class="text-sm font-bold text-violet-800 dark:text-violet-200 truncate max-w-[200px]">Файл.jpg</span>
-                    </div>
-                    <button type="button" id="cancel-file-btn" class="text-red-500 font-bold hover:text-red-700 px-2 text-xl">×</button>
+            <!-- Предпросмотр выбранного файла -->
+            <div id="file-preview-container" class="hidden mb-3 p-3 bg-violet-50 dark:bg-gray-700 rounded-xl flex items-center justify-between border border-violet-100 dark:border-gray-600">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="text-xl">📎</span>
+                    <span id="file-preview-name" class="text-sm font-bold text-violet-800 dark:text-violet-200 truncate max-w-[200px]">Файл.jpg</span>
                 </div>
-                
-                <!-- Галочка самоуничтожения -->
-                <label class="flex items-center gap-2 cursor-pointer bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-600 w-max">
-                    <input type="checkbox" id="onetime-checkbox" class="w-4 h-4 accent-violet-600 cursor-pointer">
-                    <span class="text-xs font-bold text-red-500">🔥 Удалить после 1 скачивания</span>
-                </label>
+                <button type="button" id="cancel-file-btn" class="text-red-500 font-bold hover:text-red-700 px-2 text-xl">×</button>
             </div>
 
-            <form id="chat-form" class="flex gap-2 items-end">
+            <!-- Панель Эмодзи -->
+            <div id="emoji-picker" class="hidden absolute bottom-20 left-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-xl rounded-xl p-2 grid grid-cols-6 gap-1 text-2xl z-50 max-h-40 overflow-y-auto no-scrollbar">
+                <!-- Заполняется в JS -->
+            </div>
+
+            <form id="chat-form" class="flex gap-1 sm:gap-2 items-end">
+                
+                <!-- Кнопка Эмодзи -->
+                <button type="button" id="emoji-btn" class="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 transition">
+                    😀
+                </button>
+
+                <!-- Скрепка для файла -->
                 <label class="cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 p-3 rounded-xl text-xl shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 transition">
                     📎
                     <input type="file" id="file-input" class="hidden">
                 </label>
 
-                <textarea id="msg-input" rows="1" placeholder="Введите сообщение..." class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none resize-none text-gray-800 dark:text-gray-100"></textarea>
+                <textarea id="msg-input" rows="1" placeholder="Сообщение..." class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 focus:border-violet-500 outline-none resize-none text-gray-800 dark:text-gray-100"></textarea>
                 
-                <button type="submit" id="send-btn" class="bg-violet-600 hover:bg-violet-700 text-white w-14 h-12 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 transition">
+                <button type="submit" id="send-btn" class="bg-violet-600 hover:bg-violet-700 text-white w-12 sm:w-14 h-12 sm:h-[50px] rounded-xl flex items-center justify-center shadow-md flex-shrink-0 transition">
                     <span id="send-icon">➤</span>
                     <span id="send-loader" class="loader hidden"></span>
                 </button>
@@ -109,6 +123,14 @@
 
     <!-- JAVASCRIPT ЛОГИКА -->
     <script>
+        // Функция удаления сообщения (Сделана глобальной для вызова из HTML)
+        let publishDeleteMsg = null;
+        function deleteMsg(id) {
+            if (confirm("Удалить это сообщение у всех?")) {
+                publishDeleteMsg(id);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
 
             // ТЕМНАЯ ТЕМА
@@ -130,8 +152,56 @@
             });
             applyTheme();
 
+            // АВАТАРКИ И ЭМОДЗИ
+            const avatars = ['👽', '👻', '🤖', '🐱', '🐶', '🦊', '😎', '🦄', '💩', '🤡'];
+            const emojis = ['😀','😂','🥰','😎','🤔','😭','🤬','👍','🙏','🔥','🎉','💔','🤡','👀','🧠','🚀','💯','✨'];
+            
+            const avatarContainer = document.getElementById('avatar-container');
+            const selectedAvatarInput = document.getElementById('selected-avatar');
+            
+            // Рендер аватарок
+            avatars.forEach(emoji => {
+                const span = document.createElement('span');
+                span.innerText = emoji;
+                span.className = 'cursor-pointer hover:scale-125 transition duration-200 ' + (emoji === avatars[0] ? 'scale-125 border-b-2 border-violet-500' : 'opacity-60');
+                span.onclick = () => {
+                    Array.from(avatarContainer.children).forEach(c => { c.classList.remove('scale-125', 'border-b-2', 'border-violet-500'); c.classList.add('opacity-60'); });
+                    span.classList.remove('opacity-60');
+                    span.classList.add('scale-125', 'border-b-2', 'border-violet-500');
+                    selectedAvatarInput.value = emoji;
+                };
+                avatarContainer.appendChild(span);
+            });
+
+            // Рендер эмодзи
+            const emojiPicker = document.getElementById('emoji-picker');
+            const emojiBtn = document.getElementById('emoji-btn');
+            const msgInput = document.getElementById('msg-input');
+
+            emojis.forEach(emoji => {
+                const span = document.createElement('span');
+                span.innerText = emoji;
+                span.className = 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 rounded p-1 text-center transition';
+                span.onclick = () => {
+                    msgInput.value += emoji;
+                    emojiPicker.classList.add('hidden');
+                    msgInput.focus();
+                };
+                emojiPicker.appendChild(span);
+            });
+
+            emojiBtn.onclick = () => emojiPicker.classList.toggle('hidden');
+            // Скрыть эмодзи при клике вне
+            document.addEventListener('click', (e) => {
+                if (!emojiBtn.contains(e.target) && !emojiPicker.contains(e.target)) {
+                    emojiPicker.classList.add('hidden');
+                }
+            });
+
+
             // ПЕРЕМЕННЫЕ ЧАТА
             let myNick = '';
+            let myAvatar = '';
             let currentRoom = '';
             let isCreator = false;
             let client = null;
@@ -144,12 +214,10 @@
             const loginForm = document.getElementById('login-form');
             const chatForm = document.getElementById('chat-form');
             const messagesDiv = document.getElementById('messages');
-            const msgInput = document.getElementById('msg-input');
             const fileInput = document.getElementById('file-input');
             const filePreviewContainer = document.getElementById('file-preview-container');
             const filePreviewName = document.getElementById('file-preview-name');
             const cancelFileBtn = document.getElementById('cancel-file-btn');
-            const onetimeCheckbox = document.getElementById('onetime-checkbox');
             const sendBtn = document.getElementById('send-btn');
             const sendIcon = document.getElementById('send-icon');
             const sendLoader = document.getElementById('send-loader');
@@ -162,6 +230,7 @@
                 myNick = document.getElementById('nickname').value.trim();
                 currentRoom = document.getElementById('room').value.trim();
                 isCreator = document.getElementById('is-creator').checked;
+                myAvatar = selectedAvatarInput.value;
 
                 if (myNick && currentRoom) {
                     startChat();
@@ -170,6 +239,11 @@
 
             // ВЫХОД
             logoutBtn.addEventListener('click', () => location.reload());
+
+            // ПУБЛИКАЦИЯ УДАЛЕНИЯ (Привязка глобальной функции)
+            publishDeleteMsg = (msgId) => {
+                if(client) client.publish('super-chat-pro/' + currentRoom, JSON.stringify({ type: 'deleteMsg', msgId: msgId }));
+            };
 
             // ЗАПУСК ЧАТА
             function startChat() {
@@ -182,16 +256,16 @@
                     deleteRoomBtn.classList.remove('hidden');
                 }
 
-                const saved = localStorage.getItem('my_chat_' + currentRoom);
+                const saved = localStorage.getItem('my_chat_pro_' + currentRoom);
                 if (saved) {
                     try {
                         chatHistory = JSON.parse(saved);
-                        chatHistory.forEach(renderMessage);
+                        renderAllMessages();
                     } catch(e) {}
                 }
 
                 client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-                const topic = 'super-chat-secure/' + currentRoom;
+                const topic = 'super-chat-pro/' + currentRoom;
 
                 client.on('connect', () => {
                     client.subscribe(topic);
@@ -201,11 +275,18 @@
                 client.on('message', (topic, message) => {
                     try {
                         const data = JSON.parse(message.toString());
+                        
                         if (data.type === 'chat') {
                             chatHistory.push(data);
                             saveHistory();
-                            renderMessage(data);
+                            renderAllMessages();
                         } 
+                        else if (data.type === 'deleteMsg') {
+                            // Удаляем сообщение из массива
+                            chatHistory = chatHistory.filter(msg => msg.id !== data.msgId);
+                            saveHistory();
+                            renderAllMessages();
+                        }
                         else if (data.type === 'join' && isCreator) {
                             client.publish(topic, JSON.stringify({ type: 'sync', history: chatHistory }));
                         } 
@@ -213,12 +294,11 @@
                             if (data.history.length > chatHistory.length) {
                                 chatHistory = data.history;
                                 saveHistory();
-                                messagesDiv.innerHTML = '';
-                                chatHistory.forEach(renderMessage);
+                                renderAllMessages();
                             }
                         } 
                         else if (data.type === 'delete') {
-                            localStorage.removeItem('my_chat_' + currentRoom);
+                            localStorage.removeItem('my_chat_pro_' + currentRoom);
                             messagesDiv.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold mt-10">Создатель навсегда удалил чат.</div>`;
                             setTimeout(() => location.reload(), 3000);
                         }
@@ -226,7 +306,7 @@
                 });
             }
 
-            // ВЫБОР ФАЙЛА (Только предпросмотр, загрузка будет при нажатии "Отправить")
+            // ВЫБОР ФАЙЛА
             fileInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -240,7 +320,6 @@
                 selectedFile = file;
                 filePreviewName.innerText = file.name;
                 filePreviewContainer.classList.remove('hidden');
-                onetimeCheckbox.checked = false; // Сбрасываем галочку
             });
 
             // ОТМЕНА ФАЙЛА
@@ -252,28 +331,18 @@
                 filePreviewContainer.classList.add('hidden');
             }
 
-            // ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА В ОБЛАКО
-            async function uploadFileToCloud(file, isOneTime) {
+            // ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА (Только надежный tmpfiles)
+            async function uploadFileToCloud(file) {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                if (isOneTime) {
-                    // Используем file.io для одноразовых файлов (Удаляется после 1 скачивания)
-                    const res = await fetch('https://file.io', { method: 'POST', body: formData });
-                    if (!res.ok) throw new Error("Ошибка file.io");
-                    const json = await res.json();
-                    return json.link;
-                } else {
-                    // Используем tmpfiles.org для обычных файлов (Хранится дольше, надежный API)
-                    const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: formData });
-                    if (!res.ok) throw new Error("Ошибка tmpfiles.org");
-                    const json = await res.json();
-                    // tmpfiles отдает ссылку на страницу, меняем URL для прямого скачивания/просмотра
-                    return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-                }
+                const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: formData });
+                if (!res.ok) throw new Error("Ошибка сервера загрузки");
+                const json = await res.json();
+                return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
 
-            // ОТПРАВКА СООБЩЕНИЯ (Текст + Возможная загрузка файла)
+            // ОТПРАВКА СООБЩЕНИЯ
             chatForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const text = msgInput.value.trim();
@@ -281,43 +350,42 @@
                 if (!text && !selectedFile) return;
 
                 let uploadedFileData = null;
-                const isOneTime = onetimeCheckbox.checked;
 
-                // Блокируем кнопку на время загрузки
                 sendBtn.disabled = true;
                 sendIcon.classList.add('hidden');
                 sendLoader.classList.remove('hidden');
                 msgInput.disabled = true;
 
                 try {
-                    // Если выбран файл - сначала грузим его
                     if (selectedFile) {
-                        const fileUrl = await uploadFileToCloud(selectedFile, isOneTime);
+                        const fileUrl = await uploadFileToCloud(selectedFile);
                         uploadedFileData = {
                             name: selectedFile.name,
                             type: selectedFile.type || 'application/octet-stream',
-                            url: fileUrl,
-                            onetime: isOneTime
+                            url: fileUrl
                         };
                     }
 
-                    // Формируем и отправляем сообщение
+                    // Генерация уникального ID для сообщения
+                    const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
                     const msgData = {
+                        id: uniqueId,
                         type: 'chat',
                         sender: myNick,
+                        avatar: myAvatar,
                         text: text,
                         file: uploadedFileData,
                         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     };
 
-                    client.publish('super-chat-secure/' + currentRoom, JSON.stringify(msgData));
+                    client.publish('super-chat-pro/' + currentRoom, JSON.stringify(msgData));
                     
                     msgInput.value = '';
                     clearFile();
                 } catch (err) {
-                    alert("❌ Ошибка при отправке файла. Проверьте подключение к интернету или попробуйте другой файл.\nДетали: " + err.message);
+                    alert("❌ Ошибка при отправке файла.\nДетали: " + err.message);
                 } finally {
-                    // Разблокируем интерфейс
                     sendBtn.disabled = false;
                     sendIcon.classList.remove('hidden');
                     sendLoader.classList.add('hidden');
@@ -329,66 +397,86 @@
             // УДАЛЕНИЕ КОМНАТЫ
             deleteRoomBtn.addEventListener('click', () => {
                 if (confirm("Вы уверены? Чат удалится у всех навсегда.")) {
-                    client.publish('super-chat-secure/' + currentRoom, JSON.stringify({ type: 'delete' }));
+                    client.publish('super-chat-pro/' + currentRoom, JSON.stringify({ type: 'delete' }));
                 }
             });
 
             // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
             function saveHistory() {
                 try {
-                    localStorage.setItem('my_chat_' + currentRoom, JSON.stringify(chatHistory));
+                    localStorage.setItem('my_chat_pro_' + currentRoom, JSON.stringify(chatHistory));
                 } catch(e) {
-                    chatHistory = chatHistory.slice(-20);
-                    localStorage.setItem('my_chat_' + currentRoom, JSON.stringify(chatHistory));
+                    chatHistory = chatHistory.slice(-30);
+                    localStorage.setItem('my_chat_pro_' + currentRoom, JSON.stringify(chatHistory));
                 }
             }
 
-            function renderMessage(msg) {
-                const isMe = msg.sender === myNick;
-                const wrapper = document.createElement('div');
-                wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'}`;
+            function renderAllMessages() {
+                messagesDiv.innerHTML = ''; // Очищаем всё
+                
+                // Рендерим заново
+                chatHistory.forEach(msg => {
+                    const isMe = msg.sender === myNick;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} gap-2`;
 
-                let fileHtml = '';
-                if (msg.file && msg.file.url) {
-                    const isImage = msg.file.type.startsWith('image/');
-                    
-                    // Плашка, если файл самоуничтожающийся
-                    const onetimeBadge = msg.file.onetime 
-                        ? `<div class="bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-1 rounded-md mb-2 text-center shadow-sm animate-pulse">🔥 Удалится после скачивания</div>` 
+                    // АВАТАРКА ДРУГОГО ПОЛЬЗОВАТЕЛЯ
+                    const avatarHtmlOther = !isMe 
+                        ? `<div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">${msg.avatar || '👤'}</div>` 
                         : '';
 
-                    if (isImage && !msg.file.onetime) {
-                        // Картинки (если они не одноразовые, можно показать превью)
-                        fileHtml = `
-                            ${onetimeBadge}
-                            <div class="mb-2 p-1 rounded-xl bg-black/5 dark:bg-black/20">
-                                <img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain">
-                                <a href="${msg.file.url}" target="_blank" class="block mt-2 text-center bg-violet-500/20 hover:bg-violet-500/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 rounded-lg transition">🔍 Открыть / Скачать</a>
-                            </div>`;
-                    } else {
-                        // Обычные файлы (или одноразовые картинки - их безопаснее качать кнопкой)
-                        fileHtml = `
-                            ${onetimeBadge}
-                            <div class="mb-2 bg-black/10 dark:bg-black/30 p-3 rounded-xl flex flex-col items-center gap-2 text-center">
-                                <div class="text-3xl">📄</div>
-                                <div class="text-sm font-bold truncate max-w-[150px]">${msg.file.name}</div>
-                                <a href="${msg.file.url}" target="_blank" class="bg-violet-700 hover:bg-violet-800 text-white text-xs py-2 px-6 rounded-lg transition w-full">⬇️ Скачать файл</a>
-                            </div>`;
+                    // АВАТАРКА МОЯ
+                    const avatarHtmlMe = isMe 
+                        ? `<div class="w-10 h-10 rounded-full bg-violet-200 dark:bg-violet-800 border border-violet-400 dark:border-violet-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">${msg.avatar || '👤'}</div>` 
+                        : '';
+
+                    let fileHtml = '';
+                    if (msg.file && msg.file.url) {
+                        const isImage = msg.file.type.startsWith('image/');
+                        if (isImage) {
+                            fileHtml = `
+                                <div class="mb-2 p-1 rounded-xl bg-black/5 dark:bg-black/20">
+                                    <img src="${msg.file.url}" class="rounded-lg max-h-64 object-contain">
+                                    <a href="${msg.file.url}" target="_blank" class="block mt-2 text-center bg-violet-500/20 hover:bg-violet-500/40 text-violet-900 dark:text-violet-100 text-xs font-bold py-2 rounded-lg transition">🔍 Открыть / Скачать</a>
+                                </div>`;
+                        } else {
+                            fileHtml = `
+                                <div class="mb-2 bg-black/10 dark:bg-black/30 p-3 rounded-xl flex flex-col items-center gap-2 text-center">
+                                    <div class="text-3xl">📄</div>
+                                    <div class="text-sm font-bold truncate max-w-[150px]">${msg.file.name}</div>
+                                    <a href="${msg.file.url}" target="_blank" class="bg-violet-700 hover:bg-violet-800 text-white text-xs py-2 px-6 rounded-lg transition w-full">⬇️ Скачать файл</a>
+                                </div>`;
+                        }
                     }
-                }
 
-                let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
+                    let textHtml = msg.text ? `<div class="text-[15px] leading-relaxed break-words whitespace-pre-wrap">${msg.text}</div>` : '';
 
-                wrapper.innerHTML = `
-                    <div class="max-w-[85%] sm:max-w-[75%] px-4 py-3 shadow-sm relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-br-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-none border border-gray-200 dark:border-gray-700'}">
-                        ${!isMe ? `<div class="text-xs font-bold text-violet-500 dark:text-violet-400 mb-2">${msg.sender}</div>` : ''}
-                        ${fileHtml}
-                        ${textHtml}
-                        <div class="text-[10px] mt-2 opacity-70 text-right font-semibold">${msg.time}</div>
-                    </div>
-                `;
+                    // КНОПКА КОРЗИНЫ (Только для моих сообщений)
+                    const trashBtn = isMe 
+                        ? `<button onclick="deleteMsg('${msg.id}')" class="text-red-300 hover:text-red-100 transition text-sm ml-2 cursor-pointer" title="Удалить у всех">🗑️</button>` 
+                        : '';
 
-                messagesDiv.appendChild(wrapper);
+                    wrapper.innerHTML = `
+                        ${avatarHtmlOther}
+                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%] sm:max-w-[60%]">
+                            ${!isMe ? `<div class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1 ml-1">${msg.sender}</div>` : ''}
+                            
+                            <div class="px-4 py-3 shadow-md relative ${isMe ? 'bg-violet-600 text-white rounded-2xl rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-none border border-gray-200 dark:border-gray-700'}">
+                                ${fileHtml}
+                                ${textHtml}
+                                
+                                <div class="flex justify-end items-center mt-2 opacity-80 text-[10px] font-semibold">
+                                    <span>${msg.time}</span>
+                                    ${trashBtn}
+                                </div>
+                            </div>
+                        </div>
+                        ${avatarHtmlMe}
+                    `;
+
+                    messagesDiv.appendChild(wrapper);
+                });
+                
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
 
